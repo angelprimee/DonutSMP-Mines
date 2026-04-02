@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DonutSMP Collective Mines</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .grid { display: grid; grid-template-columns: repeat(5, 60px); gap: 5px; margin-top: 20px; }
+    .square { width: 60px; height: 60px; background-color: #444; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; font-size: 20px; }
+    .bomb { color: black; font-size: 24px; }
+  </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
+
+  <h1 class="text-4xl font-bold mb-4">DonutSMP Collective Mines</h1>
+  <p class="mb-2">Balance: <span id="balance">1000</span> coins</p>
+  <input id="bet" type="number" value="50" class="text-black px-2 py-1 rounded mb-4" />
+  <button onclick="startRound()" class="mt-2 px-6 py-2 bg-purple-600 rounded-2xl">Start Round</button>
+
+  <div id="grid" class="grid"></div>
+
+  <script>
+    let balance = 1000;
+    const gridSize = 25;
+    let bombIndices = [];
+    let multipliers = [0.4, 0.5, 1.5, 2, 3];
+
+    function startRound() {
+      document.getElementById('balance').innerText = balance;
+      const bet = parseInt(document.getElementById('bet').value);
+      if (bet > balance || bet <= 0) return alert('Invalid bet');
+      balance -= bet;
+
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+
+      // Random bombs
+      bombIndices = [];
+      const bombCount = Math.floor(Math.random() * 6) + 1;
+      while(bombIndices.length < bombCount){
+        let idx = Math.floor(Math.random() * gridSize);
+        if(!bombIndices.includes(idx)) bombIndices.push(idx);
+      }
+
+      // Random multipliers for non-bomb squares
+      let squareMultipliers = Array(gridSize).fill(1);
+      for(let i=0; i<gridSize; i++){
+        if(!bombIndices.includes(i)) {
+          squareMultipliers[i] = multipliers[Math.floor(Math.random()*multipliers.length)];
+        }
+      }
+
+      let roundOver = false;
+      let greenCount = 0;
+
+      for(let i=0; i<gridSize; i++){
+        const sq = document.createElement('div');
+        sq.className = 'square';
+        sq.onclick = function(){
+          if(roundOver) return;
+
+          if(bombIndices.includes(i)){
+            sq.style.backgroundColor = 'red';
+            sq.innerHTML = '💣';
+            roundOver = true;
+            alert('Boom! You hit a bomb. Round over.');
+          } else {
+            sq.style.backgroundColor = 'green';
+            sq.innerHTML = squareMultipliers[i] + 'x';
+            const winnings = bet * squareMultipliers[i];
+            balance += winnings;
+            document.getElementById('balance').innerText = balance;
+            greenCount++;
+
+            if(greenCount === gridSize - bombIndices.length){
+              roundOver = true;
+              alert('Congrats! You cleared all safe squares and won the round.');
+            }
+          }
+          sq.onclick = null;
+        }
+        grid.appendChild(sq);
+      }
+    }
+  </script>
+
+</body>
+</html>
